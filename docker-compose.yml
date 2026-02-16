@@ -1,11 +1,24 @@
-server {
-    listen 80;
-    server_name appverificar.online;
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # Si usas HTTPS, agrega certificados SSL
+      # - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - gotenberg
+    restart: unless-stopped
 
-    root /usr/share/nginx/html;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ =404;
-    }
-}
+  gotenberg:
+    image: gotenberg/gotenberg:latest
+    environment:
+      GOTENBERG_API_BASIC_AUTH_USERNAME: ${GOTENBERG_API_BASIC_AUTH_USERNAME}
+      GOTENBERG_API_BASIC_AUTH_PASSWORD: ${GOTENBERG_API_BASIC_AUTH_PASSWORD}
+    command:
+      - gotenberg
+      - --api-enable-basic-auth
+      - --api-timeout=300s
+    restart: unless-stopped
